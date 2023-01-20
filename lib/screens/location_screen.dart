@@ -78,3 +78,8 @@ class _LocationScreenState extends State<LocationScreen> {
     );
   }
 }
+
+
+// String wCity = weatherData['name'];
+// int wCondition = weatherData['weather'][0]['id'];
+// double wTemperature = weatherData['main']['temp'];
