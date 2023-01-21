@@ -1,14 +1,54 @@
+import 'package:clima_app/screens/city_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:clima_app/utilities/constants.dart';
+import 'package:clima_app/services/weather.dart';
 
 class LocationScreen extends StatefulWidget {
-  const LocationScreen({super.key});
+  const LocationScreen({super.key, this.locationData});
+
+  final dynamic locationData;
 
   @override
   State<LocationScreen> createState() => _LocationScreenState();
 }
 
 class _LocationScreenState extends State<LocationScreen> {
+  WeatherModel weatherModel = WeatherModel();
+  late int wTemperature;
+  late String wIcon;
+  late String wStatus;
+  late String wCity;
+
+  void updateUI(dynamic locationData) {
+    setState(() {
+      if (locationData == null) {
+        wIcon = 'Error';
+        wCity = '';
+        wStatus = 'Unable to get weather data';
+        wTemperature = 0;
+
+        return;
+      }
+
+      wCity = locationData['name'];
+
+      int condition = locationData['weather'][0]['id'];
+      wIcon = weatherModel.getWeatherIcon(condition);
+
+      double temp = locationData['main']['temp'];
+      wTemperature = temp.toInt();
+
+      wStatus = weatherModel.getMessage(wTemperature);
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    updateUI(widget.locationData);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -33,14 +73,33 @@ class _LocationScreenState extends State<LocationScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   TextButton(
-                    onPressed: () {},
+                    onPressed: () async {
+                      dynamic weatherData =
+                          await weatherModel.getLocationWeather();
+
+                      updateUI(weatherData);
+                    },
                     child: const Icon(
                       Icons.near_me,
                       size: 50.0,
                     ),
                   ),
                   TextButton(
-                    onPressed: () {},
+                    onPressed: () async {
+                      var typedName = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const CityScreen(),
+                        ),
+                      );
+
+                      if (typedName != null) {
+                        var weatherData =
+                            await weatherModel.getCityWeather(typedName);
+
+                        updateUI(weatherData);
+                      }
+                    },
                     child: const Icon(
                       Icons.location_city,
                       size: 50.0,
@@ -51,22 +110,22 @@ class _LocationScreenState extends State<LocationScreen> {
               Padding(
                 padding: const EdgeInsets.only(left: 15.0),
                 child: Row(
-                  children: const [
+                  children: [
                     Text(
-                      '32°',
+                      '$wTemperature°',
                       style: kTempTextStyle,
                     ),
                     Text(
-                      '☀️',
+                      wIcon,
                       style: kConditionTextStyle,
                     ),
                   ],
                 ),
               ),
-              const Padding(
-                padding: EdgeInsets.only(right: 15.0),
+              Padding(
+                padding: const EdgeInsets.only(right: 15.0),
                 child: Text(
-                  "It's 🍦 time in San Francisco!",
+                  '$wStatus in $wCity!',
                   textAlign: TextAlign.right,
                   style: kMessageTextStyle,
                 ),
@@ -78,8 +137,3 @@ class _LocationScreenState extends State<LocationScreen> {
     );
   }
 }
-
-
-// String wCity = weatherData['name'];
-// int wCondition = weatherData['weather'][0]['id'];
-// double wTemperature = weatherData['main']['temp'];
